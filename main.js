@@ -1,10 +1,10 @@
 
 // parameters ****************************************
 
-const w = 400
-const h = 260
+const W = 400
+const H = 260
 
-COLORS = {
+const COLORS = {
     "#ffffff": 0.2,
     "#ab123b": 0.03,
     "#e03844": 0.22,
@@ -32,15 +32,7 @@ class Flag {
         this.layer3 = layers[2]
         this.l1_col = create_palette(weighted_random(l1_col_prob[this.layer1]))
         this.num_stripes = 0
-        if (this.layer1 == 'double_d_cross' && this.layer2 == 'double_h_cross') {
-            this.l2_col = this.l1_col.slice(0,2)
-        } else if (this.layer1 == 'h_stripes') {
-            let exc = this.l1_col.slice()
-            exc.push("#ffffff")
-            this.l2_col = create_palette(1, exc)            
-        } else {
-            this.l2_col = create_palette(2, this.l1_col)
-        }
+        this.l2_col = this.create_l2_palette()
     }
 
     get_layer(layer_num) {
@@ -52,6 +44,21 @@ class Flag {
     set_layer(layer_num, layer_type) {
         let l = 'layer' + layer_num
         this[l] = layer_type
+    }
+
+    create_l2_palette() {
+        // union jack style : forcing same colors for second cross
+        if (this.layer1 == 'double_d_cross' && this.layer2 == 'double_h_cross') {
+            return this.l1_col.slice(0,2)
+        // h stripes : prevent white and l1 cols
+        } else if (this.layer1 == 'h_stripes') {
+            let exc = this.l1_col.slice()
+            exc.push("#ffffff")
+            return create_palette(1, exc)
+        // others ; prevent l1 cols      
+        } else {
+            return create_palette(2, this.l1_col)
+        }
     }
 
     show() {
@@ -78,7 +85,7 @@ class Flag {
 // P5 main functions *********************************
 
 function setup() {
-    createCanvas(w, h)
+    createCanvas(W, H)
     noStroke()
     noLoop()
 }
@@ -86,7 +93,7 @@ function setup() {
 function draw() {
     console.clear()
     let layers = pick_layers()
-    let f = new Flag(0, 0, w, h, layers)
+    let f = new Flag(0, 0, W, H, layers)
     console.log('* LAYER 1 : ' + f.get_layer(1))
     console.log('* LAYER 2 : ' + f.get_layer(2))
     // console.log('>>> LAYER 3 : ' + f.get_layer(3))
