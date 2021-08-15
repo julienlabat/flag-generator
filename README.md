@@ -1,6 +1,6 @@
 # Flag generator
 
-This is a random flag generator using [https://p5js.org/](P5.js). It generates random flags that feel like real country flags.
+This is a random flag generator using [P5.js](https://p5js.org/). It generates random flags that feel like real country flags.
 
 ## Weighted random
 
