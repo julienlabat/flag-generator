@@ -119,7 +119,7 @@ function h_stripes(col, x, y, w, h, num_stripes=0){
         col.unshift('#ffffff')
     }
     let sh = h/num_stripes
-    for (i=0; i<=num_stripes; i++) {
+    for (let i=0; i<=num_stripes; i++) {
         rectangle(col[i%2], x, y+i*sh, w, sh)
     }
 }
@@ -211,7 +211,7 @@ function zigzag(col, x, y, w, h){
     vertex(0,h)
     vertex(0,0)
     vertex(hw,0)
-    for (i=0; i<(num_pikes+1); i++) {
+    for (let i=0; i<(num_pikes+1); i++) {
         vertex(hw+pw*(i%2),i*h/num_pikes)
     }
     vertex(hw,h)

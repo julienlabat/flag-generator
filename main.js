@@ -55,7 +55,7 @@ class Flag {
             let exc = this.l1_col.slice()
             exc.push("#ffffff")
             return create_palette(1, exc)
-        // others ; prevent l1 cols      
+        // others : prevent l1 cols      
         } else {
             return create_palette(2, this.l1_col)
         }
@@ -96,7 +96,6 @@ function draw() {
     let f = new Flag(0, 0, W, H, layers)
     console.log('* LAYER 1 : ' + f.get_layer(1))
     console.log('* LAYER 2 : ' + f.get_layer(2))
-    // console.log('>>> LAYER 3 : ' + f.get_layer(3))
     f.show()
 }
 
@@ -105,8 +104,7 @@ function draw() {
 function pick_layers() {
     let l1 = weighted_random(layer1_prob)
     let l2 = weighted_random(layer2_prob[l1])
-    let l3 = 'not implemented'
-    return [l1, l2, l3]
+    return [l1, l2]
 }
 
 function weighted_random(obj) {
