@@ -1,221 +1,312 @@
-function plain(col, x, y, w, h){
-    if (col[0] == "#1a1a1a" && random(1) < 0.8) {
-        col = create_palette(1, ["#1a1a1a"])
+class Layer {
+    constructor(col, x, y, w, h) {
+        this.col = col
+        this.x = x
+        this.y = y
+        this.w = w
+        this.h = h
     }
-    rectangle(col[0], x, y, w, h)
+    get cols() {
+        return this.col
+    }
+    get numCols() {
+        return this.col.length
+    }
 }
 
-function vertical(col, x, y, w, h){
-    let num_cols = col.length
-    // rare : 2 colors (1/3 | 2/3) (eg. Portugal)
-    if (num_cols == 2 && random(1) < 0.08) {
-        let sep = 3
-        rectangle(col[0],x,y,w,h)
-        rectangle(col[1],x+w/sep,y,w-w/sep,h)
-    } 
-    // 2 or 3 equal parts
-    else {
-        for (let i=0; i < col.length; i++) {
-            rectangle(col[i],x+i*w/num_cols,y,w/num_cols,h)
+class Plain extends Layer {
+    constructor(col, x, y, w, h) {
+        super(col, x, y, w, h)
+    }
+    show() {
+        rectangle(this.col[0], this.x, this.y, this.w, this.h)
+    }
+}
+
+class Vertical extends Layer {
+    constructor(col, x, y, w, h) {
+        super(col, x, y, w, h)
+        if (col.length == 2 &&random(1) < 0.08) {
+            // rare : 2 colors (1/3 | 2/3) (eg. Portugal)
+            this.type = 'unequal'
+        } else { 
+            // 2 or 3 equal parts
+            this.type = 'equal'
+        }
+    }
+    show() {
+        if (this.type == 'unequal') {
+            let sep = 3
+            rectangle(this.col[0],this.x,this.y,this.w,this.h)
+            rectangle(this.col[1],this.x+this.w/sep,this.y,this.w-this.w/sep,this.h)
+        } else {
+            for (let i=0; i < this.numCols; i++) {
+                rectangle(this.col[i],this.x+i*this.w/this.numCols,this.y,this.w/this.numCols,this.h)
+            }
         }
     }
 }
 
-function horizontal(col, x, y, w, h){
-    let num_cols = col.length
-    // rare 3 cols (1/2 | 1/4 | 1/4) (eg. Colombia)
-    if (num_cols == 3 && random(1) < 0.06) {
-        rectangle(col[0], x, y, w, h/2)
-        rectangle(col[1], x, y+h/2, w, h/4)
-        rectangle(col[2], x, y+h/2+h/4, w, h/4)
+class Horizontal extends Layer {
+    constructor(col, x, y, w, h) {
+        super(col, x, y, w, h)
+        if (col.length == 3 && random(1) < 0.06) {
+            // rare 3 cols (1/2 | 1/4 | 1/4) (eg. Colombia)
+            this.type = 'unequal3'
+        }
+        else if (col.length == 2 && Math.random() < 0.05) {
+            // rare 2 cols (3/4 | 1/4) (eg. Belarus)
+            this.type = 'unequal2'
+        } else {
+            this.type = 'equal'
+        }
     }
-    // rare 2 cols (3/4 | 1/4) (eg. Belarus)
-    else if (num_cols == 2 && Math.random() < 0.05) {
-        rectangle(col[0], x, y, w, h/2+h/4)
-        rectangle(col[1], x, y+h/2+h/4, w, h/4)
-    }
-    // equal parts
-    else {
-        for (let i=0; i<num_cols; i++) {
-            rectangle(col[i],x,y+i*h/num_cols,w,h/num_cols)
+    show() {
+        if (this.type == 'unequal3') {
+            rectangle(this.col[0], this.x, this.y, this.w, this.h/2)
+            rectangle(this.col[1], this.x, this.y+this.h/2, this.w, this.h/4)
+            rectangle(this.col[2], this.x, this.y+this.h/2+this.h/4, this.w, this.h/4)
+        }
+        else if (this.type == 'unequal2') {
+            rectangle(this.col[0], this.x, this.y, this.w, this.h/2+this.h/4)
+            rectangle(this.col[1], this.x, this.y+this.h/2+this.h/4, this.w, this.h/4)
+        }
+        else {
+            for (let i=0; i<this.numCols; i++) {
+                rectangle(this.col[i],this.x,this.y+i*this.h/this.numCols,this.w,this.h/this.numCols)
+            }
         }
     }
 }
 
-function diagonal(col, x, y, w, h){
-    let num_cols = col.length
-    let corner = is_north_east(w,h)
-    if (corner.y == 0) {
-        var north_east = false
-    } else {
-        var north_east = true
+class Diagonal extends Layer {
+    constructor(col, x, y, w, h) {
+        super(col, x, y, w, h)
+        this.corner = isNorthEast(w,h)
+        if (this.corner.y == 0) {
+            this.northEast = false
+        } else {
+            this.northEast = true
+        }
     }
-    rectangle(col[0], x, y, w, h)
-    if (num_cols == 3) {
-        let t = w/random(14, 80)
-        let cols = [col[1], col[2]]
-        two_corners(north_east, t, cols, x, y, w, h)
-    } else {
-        fill(col[1])
-        triangle(x,y, x,y+h, x+corner.x, y+corner.y)
-    }
-}
-
-function v_stripe(col, x, y, w, h){
-    let t = random(2,3)
-    rectangle(col[0], x, y, w, h)
-    rectangle(col[1], x+(w-(w/t))/2,y,w/t,h)
-}
-
-function h_stripe(col, x, y, w, h){
-    let num_cols = col.length
-    rectangle(col[0], x, y, w, h)
-    if (num_cols == 4) {
-        rectangle(col[3],x,y+h/2,w,h/2)
-    }
-    if (num_cols > 2) {
-        let t = h/random(3.5,4.5)
-        rectangle(col[2],x,y+h/2-t,w,2*t)
-    }
-    let t = h/random(5,6)
-    rectangle(col[1],x,y+h/2-t,w,2*t)
-}
-
-function d_stripe(col, x, y, w, h){
-    let num_cols = col.length
-    let corner = is_north_east(w,h)
-    if (corner.y == 0) {
-        var north_east = false
-    } else {
-        var north_east = true
-    }
-    let col1 = [col[0]]
-    rectangle(col1, x, y, w, h)
-    let t = random(6,8)
-    let col2 = [col[1]]
-    two_corners(north_east, t, col2, x, y, w, h)
-    if (num_cols == 4) {
-        t = t/1.6
-        let col3 = col.slice(2)
-        two_corners(north_east, t, col3, x, y, w, h)
+    show() {
+        rectangle(this.col[0], this.x, this.y, this.w, this.h)
+        if (this.numCols == 3) {
+            let t = this.w/random(14, 80)
+            let cols = [this.col[1], this.col[2]]
+            twoCorners(this.northEast, t, cols, this.x, this.y, this.w, this.h)
+        } else {
+            fill(this.col[1])
+            triangle(this.x,this.y, this.x,this.y+this.h, this.x+this.corner.x, this.y+this.corner.y)
+        }
     }
 }
 
-function h_two_stripe(col, x, y, w, h){
-    rectangle(col[0], x, y, w, h)
-    push()
-    translate(x,y)
-    let pos = h/10
-    let rh = pos
-    let col1 = col[1]
-    rectangle(col1,0,pos,w,rh)
-    rectangle(col1,0,h-pos-rh,w,rh)
-    pop()
-}
-
-function h_stripes(col, x, y, w, h, num_stripes=0){
-    if (!col.includes('#ffffff')) {
-        col.pop()
-        col.unshift('#ffffff')
+class VStripe extends Layer {
+    constructor(col, x, y, w, h) {
+        super(col, x, y, w, h)
     }
-    let sh = h/num_stripes
-    for (let i=0; i<=num_stripes; i++) {
-        rectangle(col[i%2], x, y+i*sh, w, sh)
+    show() {
+        let t = random(2,3)
+        rectangle(this.col[0], this.x, this.y, this.w, this.h)
+        rectangle(this.col[1], this.x+(this.w-(this.w/t))/2,this.y,this.w/t,this.h)
     }
 }
 
-function h_cross(col, x, y, w, h){
-    let num_cols = col.length
-    let is_nordic = random(1) > 0.5
-    rectangle(col[0], x, y, w, h)
-    // quarter sections for 3 colors layout
-    if (num_cols == 3) {
-        is_nordic = false
-        col2 = col[2]
-        rectangle(col2,x,y,w/2,h/2)
-        rectangle(col2,x+w/2,y+h/2,w/2,h/2)
+class HStripe extends Layer {
+    constructor(col, x, y, w, h) {
+        super(col, x, y, w, h)
     }
-    // drawing the cross
-    t = w/8
-    straight_cross(is_nordic, t, col[1], x, y, w, h)
+    show() {
+        rectangle(this.col[0], this.x, this.y, this.w, this.h)
+        if (this.numCols == 4) {
+            rectangle(this.col[3],this.x,this.y+this.h/2,this.w,this.h/2)
+        }
+        if (this.numCols > 2) {
+            let t = this.h/random(3.5,4.5)
+            rectangle(this.col[2],this.x,this.y+this.h/2-t,this.w,2*t)
+        }
+        let t = this.h/random(5,6)
+        rectangle(this.col[1],this.x,this.y+this.h/2-t,this.w,2*t)
+    }
 }
 
-function d_cross(col, x, y, w, h){
-    let num_cols = col.length
-    rectangle(col[0],x,y,w,h)
-    // four_triangles
-    let t = random(7,10)
-    let cols = [col[1]]
-    if (num_cols == 3) {
-        cols.push(col[2])
+class DStripe extends Layer {
+    constructor(col, x, y, w, h) {
+        super(col, x, y, w, h)
+        this.corner = isNorthEast(w,h)
+        if (this.corner.y == 0) {
+            this.northEast = false
+        } else {
+            this.northEast = true
+        }
     }
-    four_triangles(t,cols,x,y,w,h)
+    show() {
+        rectangle(this.col[0], this.x, this.y, this.w, this.h)
+        var t = random(6,8)
+        twoCorners(this.northEast, t, [this.col[1]], this.x, this.y, this.w, this.h)
+        if (this.numCols == 4) {
+            t = t/1.6
+            let col3 = this.col.slice(2)
+            twoCorners(this.northEast, t, col3, this.x, this.y, this.w, this.h)
+        }
+    }
 }
 
-function double_cross(col, x, y, w, h){
-    let is_nordic = random(1) > 0.5
-    // plain field
-    rectangle(col[0],x,y,w,h)
-    // cross first pass
-    let t = w/random(5,6)
-    straight_cross(is_nordic,t,col[1],x,y,w,h)
-    // cross second pass
-    t = t/2
-    straight_cross(is_nordic,t,col[2],x,y,w,h)
+class HTwoStripe extends Layer {
+    constructor(col, x, y, w, h) {
+        super(col, x, y, w, h)
+    }
+    show() {
+        rectangle(this.col[0], this.x, this.y, this.w, this.h)
+        push()
+        translate(this.x,this.y)
+        let pos = this.h/10
+        let rh = pos
+        rectangle(this.col[1],0,pos,this.w,rh)
+        rectangle(this.col[1],0,this.h-pos-rh,this.w,rh)
+        pop()
+    }
 }
 
-function double_d_cross(col, x, y, w, h){
-    // plain field
-    rectangle(col[0],x,y,w,h)
-    // four_triangles pass one
-    let t = 12
-    let col1 = [col[1]]
-    four_triangles(t,col1,x,y,w,h)
-    // four_triangles pass two
-    t = t/2
-    let col2 = [col[2]]
-    four_triangles(t,col2,x,y,w,h)
-
+class HStripes extends Layer {
+    constructor(col, x, y, w, h) {
+        super(col, x, y, w, h)
+        this.numStripes = int(random(5,14))
+        if (!this.col.includes('#ffffff')) {
+            this.col.pop()
+            this.col.unshift('#ffffff')
+        }
+    }
+    show() {
+        let sh = this.h/this.numStripes
+        for (let i=0; i<=this.numStripes; i++) {
+            rectangle(this.col[i%2], this.x, this.y+i*sh, this.w, sh)
+        }
+    }
 }
 
-function cross_sections(col, x, y, w, h){
-    let cols = col.filter(function(item) {
-        return item !== '#ffffff'
-    })
-    cols.unshift("#ffffff")
-    // plain field
-    rectangle(cols[0],x,y,w,h)
-    // two corner sections
-    rectangle(cols[1],x+w/2,y,w/2,h/2)
-    rectangle(cols[2],x,y+h/2,w/2,h/2)
+class HCross extends Layer {
+    constructor(col, x, y, w, h) {
+        super(col, x, y, w, h)
+        if (this.numCols != 3 && random(1) > 0.5) {
+            this.type = 'nordic'
+            this.isNordic = true
+        } else {
+            this.type = 'central'
+            this.isNordic = false
+        }
+    }
+    show() {
+        rectangle(this.col[0], this.x, this.y, this.w, this.h)
+        // quarter sections for 3 colors layout
+        if (this.numCols == 3) {
+            let col2 = this.col[2]
+            rectangle(col2,this.x,this.y,this.w/2,this.h/2)
+            rectangle(col2,this.x+this.w/2,this.y+this.h/2,this.w/2,this.h/2)
+        }
+        // drawing the cross
+        let t = this.w/8
+        straightCross(this.isNordic, t, this.col[1], this.x, this.y, this.w, this.h)
+    }
 }
 
-function zigzag(col, x, y, w, h){
-    // prevent black field
-    if (col[0] == "#1a1a1a") { 
-        col = create_palette(2, ["#1a1a1a"])
+class DCross extends Layer {
+    constructor(col, x, y, w, h) {
+        super(col, x, y, w, h)
     }
-    // plain field
-    rectangle(col[0],x,y,w,h)
-    // hoist section with zigzag right border
-    let hw = w/4
-    let num_pikes = 1
-    while (num_pikes%2 == 1) { 
-        num_pikes = int(random(11,21))
+    show() {
+        rectangle(this.col[0],this.x,this.y,this.w,this.h)
+        // four triangles
+        let t = random(7,10)
+        let cols = [this.col[1]]
+        if (this.numCols == 3) {
+            cols.push(this.col[2])
+        }
+        fourTriangles(t,cols,this.x,this.y,this.w,this.h)
     }
-    let pw = w/8
-    fill(col[1])
-    push()
-    translate(x,y)
-    beginShape()
-    vertex(0,h)
-    vertex(0,0)
-    vertex(hw,0)
-    for (let i=0; i<(num_pikes+1); i++) {
-        vertex(hw+pw*(i%2),i*h/num_pikes)
+}
+
+class DoubleCross extends Layer {
+    constructor(col, x, y, w, h) {
+        super(col, x, y, w, h)
+        this.isNordic = random(1) > 0.5
+        if (this.isNordic == true) {
+            this.type = 'nordic'
+        } else {
+            this.type = 'central'
+        }
     }
-    vertex(hw,h)
-    vertex(0,h)
-    endShape()
-    pop()
+    show() {
+        rectangle(this.col[0], this.x, this.y, this.w, this.h)
+        // cross first pass
+        let t = this.w/random(5,6)
+        straightCross(this.isNordic,t,this.col[1],this.x,this.y,this.w,this.h)
+        // cross second pass
+        t = t/2
+        straightCross(this.isNordic,t,this.col[2],this.x,this.y,this.w,this.h)
+    }
+}
+
+class DoubleDCross extends Layer {
+    constructor(col, x, y, w, h) {
+        super(col, x, y, w, h)
+    }
+    show() {
+        rectangle(this.col[0], this.x, this.y, this.w, this.h)
+        // fourTriangles pass one
+        let t = 12
+        let col1 = [this.col[1]]
+        fourTriangles(t,col1,this.x,this.y,this.w,this.h)
+        // fourTriangles pass two
+        t = t/2
+        let col2 = [this.col[2]]
+        fourTriangles(t,col2,this.x,this.y,this.w,this.h)
+    }
+}
+
+class CrossSections extends Layer {
+    constructor(col, x, y, w, h) {
+        super(col, x, y, w, h)
+        this.col = col.filter(function(item) {
+            return item !== '#ffffff'
+        })
+        this.col.unshift("#ffffff")
+    }
+    show() {
+        rectangle(this.col[0], this.x, this.y, this.w, this.h)
+        // two corner sections
+        rectangle(this.col[1],this.x+this.w/2,this.y,this.w/2,this.h/2)
+        rectangle(this.col[2],this.x,this.y+this.h/2,this.w/2,this.h/2)
+    }
+}
+
+class Zigzag extends Layer {
+    constructor(col, x, y, w, h) {
+        super(col, x, y, w, h)
+        this.numPikes = 1
+        while (this.numPikes%2 == 1) { 
+            this.numPikes = int(random(11,21))
+        }
+    }
+    show() {
+        rectangle(this.col[0], this.x, this.y, this.w, this.h)
+        // hoist section with zigzag right border
+        let hw = this.w/4
+        let pw = this.w/8
+        fill(this.col[1])
+        push()
+        translate(this.x,this.y)
+        beginShape()
+        vertex(0,this.h)
+        vertex(0,0)
+        vertex(hw,0)
+        for (let i=0; i<(this.numPikes+1); i++) {
+            vertex(hw+pw*(i%2),i*this.h/this.numPikes)
+        }
+        vertex(hw,this.h)
+        vertex(0,this.h)
+        endShape()
+        pop()
+    }
 }

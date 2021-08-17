@@ -4,6 +4,8 @@
 const W = 400
 const H = 260
 
+const debug = true
+
 const COLORS = {
     "#ffffff": 0.2,
     "#ab123b": 0.03,
@@ -27,56 +29,45 @@ class Flag {
         this.y = y;
         this.w = w;
         this.h = h;
-        this.layer1 = layers[0]
-        this.layer2 = layers[1]
-        this.layer3 = layers[2]
-        this.l1_col = create_palette(weighted_random(l1_col_prob[this.layer1]))
-        this.num_stripes = 0
-        this.l2_col = this.create_l2_palette()
+        this.l1Name = layers[0]
+        this.l2Name = layers[1]
+        // construct layer 1
+        let l1Col = createPalette(weightedRandom(l1ColProb[this.l1Name]))
+        this.layer1 = eval('new ' + this.l1Name + "(l1Col, this.x, this.y, this.w, this.h)")
+        // construct layer 2
+        if (this.l2Name !== 'null') {
+            let l2Col = this.createL2Palette()
+            this.layer2 = eval('new ' + this.l2Name + '(l2Col, this.x, this.y, this.w, this.h, this.layer1.numStripes)')
+        }
+        // construct illus zones
     }
 
-    get_layer(layer_num) {
-        let layer = 'layer' + layer_num
-        let l = this[layer]
-        return l
-    }
-
-    set_layer(layer_num, layer_type) {
-        let l = 'layer' + layer_num
-        this[l] = layer_type
-    }
-
-    create_l2_palette() {
+    createL2Palette() {
         // union jack style : forcing same colors for second cross
-        if (this.layer1 == 'double_d_cross' && this.layer2 == 'double_h_cross') {
-            return this.l1_col.slice(0,2)
-        // h stripes : prevent white and l1 cols
-        } else if (this.layer1 == 'h_stripes') {
-            let exc = this.l1_col.slice()
-            exc.push("#ffffff")
-            return create_palette(1, exc)
+        if (this.l1Name == 'DoubleDCross' && this.l2Name == 'DoubleHCross') {
+            return [this.layer1.cols[1], this.layer1.cols[0]]
+        // HStripes : prevent white and l1 cols
+        } else if (this.l1Name == 'HStripes') {
+            let exc = this.layer1.cols.slice()
+            return createPalette(1, exc)
         // others : prevent l1 cols      
         } else {
-            return create_palette(2, this.l1_col)
+            return createPalette(2, this.layer1.cols)
         }
     }
 
     show() {
         // render layer 1
-        console.log('l1 colors : ' + this.l1_col)
-        if (this.layer1 !== 'h_stripes') {
-            eval(this.layer1 + "(this.l1_col, this.x, this.y, this.w, this.h)")
-        } else {
-            this.num_stripes = int(random(5,14))
-            eval(this.layer1 + "(this.l1_col, this.x, this.y, this.w, this.h, this.num_stripes)")
-        }
+        this.layer1.show()
+        
         // render layer 2
-        console.log('l2 colors : ' + this.l2_col)
-        if (this.layer2 !== 'null' && this.layer2 !== undefined) {
-            if (this.layer1 == 'h_stripes' && this.layer2 == 'canton') {
-                eval(this.layer2 + "(this.l2_col, this.x, this.y, this.w, this.h, this.num_stripes)")
-            } else {
-                eval(this.layer2 + "(this.l2_col, this.x, this.y, this.w, this.h)")
+        if (this.l2Name !== 'null') {
+            this.layer2.show()
+            if (debug == true) {
+                // debug layer2 coords
+                stroke('#ff6781')
+                noFill()
+                rect(this.layer2.coords.x,this.layer2.coords.y, this.layer2.coords.w, this.layer2.coords.h)
             }
         }
     }
@@ -86,51 +77,58 @@ class Flag {
 
 function setup() {
     createCanvas(W, H)
-    noStroke()
     noLoop()
 }
 
 function draw() {
+    noStroke()
     console.clear()
-    let layers = pick_layers()
+    let layers = pickLayers()
     let f = new Flag(0, 0, W, H, layers)
-    console.log('* LAYER 1 : ' + f.get_layer(1))
-    console.log('* LAYER 2 : ' + f.get_layer(2))
+    if (debug == true) {
+        console.log('> LAYER 1 : ' + f.l1Name)
+        console.log('  l1 colors : ' + f.layer1.numCols + ' : ' + f.layer1.cols)
+        console.log('  l1 type : ' + f.layer1.type)
+        if (f.l2Name != 'null') {
+            console.log('> LAYER 2 : ' + f.l2Name)
+            console.log('  l2 colors : ' + f.layer2.numCols + ' : ' + f.layer2.cols)
+        }
+    }
     f.show()
 }
 
 // UTILS *********************************************
 
-function pick_layers() {
-    let l1 = weighted_random(layer1_prob)
-    let l2 = weighted_random(layer2_prob[l1])
+function pickLayers() {
+    let l1 = weightedRandom(layer1Prob)
+    let l2 = weightedRandom(layer2Prob[l1])
     return [l1, l2]
 }
 
-function weighted_random(obj) {
+function weightedRandom(obj) {
     /** Returns a random pick from weighted elements object
      *  obj: obj of choices with weights adding up to 1
      *  (eg. { choice1: 0.6, choice2: 0.4 })
      */
-    let full_list = []
+    let fullList = []
     for (i in obj) {
         let ratio = int(obj[i]*1000)
         for (let j=0; j<ratio; j++) {
-            full_list.push(i)
+            fullList.push(i)
         }
     }
     let r = int(random(1000))
-    return full_list[r]
+    return fullList[r]
 }
 
-function create_palette(num_col, other=[]) {
-    /** Returns a list of num_col colors from {color:weight} object 
-     *  num_col: int number of colors in list
+function createPalette(numCol, other=[]) {
+    /** Returns a list of numCol colors from {color:weight} object 
+     *  numCol: int number of colors in list
      *  other: list of forbidden colors if needed
     */
     let colors = []
-    while (colors.length < num_col) {
-        let c = weighted_random(COLORS)
+    while (colors.length < numCol) {
+        let c = weightedRandom(COLORS)
         if (colors.includes(c) == false && other.includes(c) == false) { colors.push(c) }
     }
     return colors
